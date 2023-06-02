@@ -73,7 +73,7 @@ class Client(ocflindex.Client):
                 publication_qualifier= pubElem.findtext("Qualifier"),
                 publisher = root.findtext("Publisher"),
                 alpha_pubdate = root.findtext("AlphaPubDate"),
-                numeric_pubdate = root.findtext("NumericPubDat"),
+                numeric_pubdate = root.findtext("NumericPubDate"),
                 source_type = root.findtext("SourceType"),
                 object_type = root.findtext("ObjectType"),
                 language_code = root.findtext("LanguageCode"),
