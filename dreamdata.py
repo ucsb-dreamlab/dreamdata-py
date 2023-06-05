@@ -31,33 +31,9 @@ class NewsRecord:
 class Client(ocflindex.Client):
     """Client for accessing DREAM Lab data collection API."""
 
-    def pqnews_getrecords(self, name: str, pubdate: date):
-        """Used to access full text xml records from the ProQuest Historical
-        Newspaper Collection. The method returns a generator yielding
-        NewsRecords for the given publication and day. The publication names
-        must be 'wapost', 'nytimes', or 'latimes')"""
-
-        def resolveID(name: str, year: int, month:int, day:int) -> str:
-            pubs = {
-                "wapost":  [('18771206','60400'),('19230101','47009'),('19540318','47011'),('19590827','47012')],
-                "nytimes": [('18510918','11558'),('18570914','55428'),('19230101','45545')],
-                "latimes": [('18811204','46998'),('18861023','55410'),('19230101','47001')]
-            }
-            date = f"{year:04}{month:02}{day:02}"
-            pubid = ''
-            for dateid in pubs[name]:
-                if date > dateid[0]:
-                    pubid = dateid[1]
-                    continue
-                if date < dateid[0]:
-                    break
-                if date == dateid[0]:
-                    return dateid[1]        
-            return f"{pubid}/{year:04}/{month:02}/{day:02}"
-        
-        id = resolveID(name, pubdate.year, pubdate.month, pubdate.day)
+    def pqnews_byid(self, id: str):
+        """Returns a generator yielding NewsRecords for the resource id."""
         state = self.get_object_state(id, "xml.zip")
-        
         for _, _, unzipped_chunks in stream_unzip(self.content_stream(state.digest)):
             cont = bytearray()
             for chunk in unzipped_chunks:
@@ -82,3 +58,27 @@ class Client(ocflindex.Client):
                 pagination = root.findtext("Pagination"),
                 url_docview = root.findtext("URLDocView"),
                 fulltext = root.findtext("FullText"))
+
+    def pqnews_namedate(self, name: str, pubdate: date):
+        """Used to access full text xml records from the ProQuest Historical
+        Newspaper Collection. The method returns a generator yielding
+        NewsRecords for the given publication and day. The publication names
+        must be 'wapost', 'nytimes', or 'latimes')"""
+        pubs = {
+            "wapost":  [('1877/12/06','60400'),('1923/01/01','47009'),('1954/03/18','47011'),('1959/08/27','47012')],
+            "nytimes": [('1851/09/18','11558'),('1857/09/14','55428'),('1923/01/01','45545')],
+            "latimes": [('1881/12/04','46998'),('1886/10/23','55410'),('1923/01/01','47001')]
+        }
+        datestr = f"{pubdate.year:04}/{pubdate.month:02}/{pubdate.day:02}"
+        pubid = ''
+        for dateid in pubs[name]:
+            if datestr > dateid[0]:
+                pubid = dateid[1]
+                continue
+            if datestr < dateid[0]:
+                break
+            if datestr == dateid[0]:
+                return dateid[1]        
+        id = f"{pubid}/{datestr}"
+        return self.pqnews_byid(id)
+        
